@@ -1,0 +1,23 @@
+# Maven
+target/
+.mvn/
+
+# Logs
+logs/
+*.log
+
+# Local DB / runtime data
+data/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Env / secrets
+.env
+
+
