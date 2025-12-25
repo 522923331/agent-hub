@@ -22,7 +22,7 @@ public class KnowledgeIngestScheduler {
         try {
             agentRunnerService.runByName("knowledge-ingest");
         } catch (Exception e) {
-            log.error("knowledge-ingest scheduled run failed", e);
+            log.error("定时执行 knowledge-ingest 失败", e);
         }
     }
 }

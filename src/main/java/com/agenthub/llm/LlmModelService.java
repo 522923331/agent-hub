@@ -2,7 +2,8 @@ package com.agenthub.llm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,12 +11,18 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class LlmModelService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final LlmProperties props;
+
+    public LlmModelService(@Qualifier("llmWebClient") WebClient webClient, ObjectMapper objectMapper, LlmProperties props) {
+        this.webClient = webClient;
+        this.objectMapper = objectMapper;
+        this.props = props;
+    }
 
     public LlmModelsResult listModels() throws Exception {
         if (props.getBaseUrl() == null || props.getBaseUrl().isBlank()) {
@@ -25,14 +32,17 @@ public class LlmModelService {
             throw new IllegalStateException("app.llm.api-key is empty");
         }
 
+        String url = trimSlash(props.getBaseUrl()) + "/v1/models";
+        long start = System.currentTimeMillis();
         String resp = webClient.get()
-                .uri(trimSlash(props.getBaseUrl()) + "/v1/models")
+                .uri(url)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getApiKey())
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
 
         if (resp == null || resp.isBlank()) {
+            log.warn("LLM 模型列表返回空响应：baseUrl={}, tookMs={}", props.getBaseUrl(), (System.currentTimeMillis() - start));
             return new LlmModelsResult(props.getBaseUrl(), props.getModel(), List.of());
         }
 
@@ -48,6 +58,7 @@ public class LlmModelService {
                 models.add(new LlmModelItem(id, ownedBy, object));
             }
         }
+        log.info("LLM 模型列表查询成功：baseUrl={}, models={}, tookMs={}", props.getBaseUrl(), models.size(), (System.currentTimeMillis() - start));
         return new LlmModelsResult(props.getBaseUrl(), props.getModel(), models);
     }
 

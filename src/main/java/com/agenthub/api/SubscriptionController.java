@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/subscriptions")
 @RequiredArgsConstructor
@@ -38,12 +40,17 @@ public class SubscriptionController {
     ) {
         int safeSize = Math.min(Math.max(size, 1), 200);
         int safePage = Math.max(page, 0);
+        log.info("查询订阅列表：page={}, size={}, q={}, enabled={}", safePage, safeSize, q, enabled);
         Page<KnowledgeSubscriptionEntity> p = repo.search(q, enabled, PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id")));
+        log.info("查询订阅列表结果：page={}, size={}, returned={}, totalElements={}, totalPages={}",
+                p.getNumber(), p.getSize(), p.getNumberOfElements(), p.getTotalElements(), p.getTotalPages());
         return PageResponse.from(p);
     }
 
     @PostMapping
     public KnowledgeSubscriptionEntity create(@Valid @RequestBody CreateSubscriptionRequest req) {
+        log.info("创建订阅：name={}, zhName={}, sourceType={}, enabled={}, fetchLimit={}, tags={}",
+                req.name(), req.zhName(), req.sourceType(), req.enabledValue(), req.fetchLimitValue(), req.tags());
         KnowledgeSubscriptionEntity e = new KnowledgeSubscriptionEntity();
         e.setName(req.name());
         e.setZhName(req.zhName());
@@ -53,11 +60,17 @@ public class SubscriptionController {
         e.setEnabled(req.enabledValue());
         e.setFetchLimit(req.fetchLimitValue());
         e.setTags(req.tags());
-        return repo.save(e);
+        KnowledgeSubscriptionEntity saved = repo.save(e);
+        log.info("创建订阅成功：id={}, feedUrl={}", saved.getId(), saved.getFeedUrl());
+        return saved;
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable("id") Long id, @Valid @RequestBody UpdateSubscriptionRequest req) {
+        log.info("修改订阅：id={}, fields=[name={}, zhName={}, capabilitySummary={}, sourceType={}, feedUrl={}, enabled={}, fetchLimit={}, tags={}]",
+                id, req.name() != null, req.zhName() != null, req.capabilitySummary() != null,
+                req.sourceType() != null, req.feedUrl() != null, req.enabled() != null,
+                req.fetchLimit() != null, req.tags() != null);
         return repo.findById(id)
                 .<ResponseEntity<?>>map(e -> {
                     if (req.name() != null) e.setName(req.name());
@@ -68,17 +81,24 @@ public class SubscriptionController {
                     if (req.enabled() != null) e.setEnabled(req.enabled());
                     if (req.fetchLimit() != null) e.setFetchLimit(req.fetchLimit());
                     if (req.tags() != null) e.setTags(req.tags());
-                    return ResponseEntity.ok(repo.save(e));
+                    KnowledgeSubscriptionEntity saved = repo.save(e);
+                    log.info("修改订阅成功：id={}, enabled={}, fetchLimit={}", saved.getId(), saved.isEnabled(), saved.getFetchLimit());
+                    return ResponseEntity.ok(saved);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "not found")));
+                .orElseGet(() -> {
+                    log.warn("修改订阅失败：未找到 id={}", id);
+                    return ResponseEntity.status(404).body(Map.of("error", "not found"));
+                });
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         if (!repo.existsById(id)) {
+            log.warn("删除订阅失败：未找到 id={}", id);
             return ResponseEntity.status(404).body(Map.of("error", "not found"));
         }
         repo.deleteById(id);
+        log.info("删除订阅成功：id={}", id);
         return ResponseEntity.ok(Map.of("deleted", true));
     }
 

@@ -23,7 +23,7 @@ public class HttpArticleFetcher {
                     .bodyToMono(String.class)
                     .block();
         } catch (Exception e) {
-            log.warn("Fetch html failed: url={}, err={}", url, e.toString());
+            log.warn("拉取 HTML 失败：url={}, err={}", url, e.toString());
             throw e;
         }
     }

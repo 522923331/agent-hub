@@ -23,8 +23,7 @@ public class FrontendUrlPrinter implements ApplicationListener<ApplicationReadyE
             port = sw.getWebServer().getPort();
         }
         String url = "http://localhost:" + port + "/";
-        log.info("Frontend: {}", url);
-        System.out.println("Frontend: " + url);
+        log.info("前端入口：{}", url);
     }
 }
 

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>文章管理 - agent-hub</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
+  <link href="/css/app.css" rel="stylesheet"/>
+</head>
+<body>
+<main class="container">
+  <nav>
+    <ul>
+      <li><strong>agent-hub</strong></li>
+    </ul>
+    <ul>
+      <li><a data-nav href="/">首页</a></li>
+      <li><a data-nav href="/subscriptions.html">订阅管理</a></li>
+      <li><a data-nav href="/articles.html" class="active">文章管理</a></li>
+    </ul>
+  </nav>
+
+  <h1>文章管理</h1>
+  <p class="muted">拉取文章、分页浏览、查看详情与修改解读稿/读后感，并可计算吸引力评分。</p>
+
+  <article>
+    <div class="toolbar">
+      <div class="grow">
+        <label for="q">搜索（标题/中文标题/来源/URL）</label>
+        <input id="q" type="text" placeholder="例如：AI / TechCrunch / reinforcement"/>
+      </div>
+      <div class="fixed">
+        <label for="status">状态</label>
+        <select id="status">
+          <option value="">全部</option>
+          <option value="DONE">DONE</option>
+          <option value="NEEDS_REVIEW">NEEDS_REVIEW</option>
+          <option value="ERROR">ERROR</option>
+        </select>
+      </div>
+      <div class="fixed">
+        <label>&nbsp;</label>
+        <div class="btn-row">
+          <button id="pull" class="contrast">拉取最新文章</button>
+          <button id="score" class="secondary">计算吸引力评分</button>
+          <button id="refresh" class="secondary">刷新</button>
+        </div>
+      </div>
+    </div>
+    <p id="err" style="margin-top:0.4rem;color:#b00020;"></p>
+    <p id="meta" class="muted"></p>
+  </article>
+
+  <div id="list" class="list">
+    <div class="card">加载中…</div>
+  </div>
+
+  <article>
+    <div class="grid">
+      <div>
+        <button id="prev" class="secondary">上一页</button>
+        <button id="next" class="secondary">下一页</button>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <span id="pagerMeta" class="muted"></span>
+      </div>
+      <div>
+        <label for="page">页码</label>
+        <input id="page" type="number" min="1" value="1"/>
+      </div>
+      <div>
+        <label for="size">每页</label>
+        <select id="size">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="go" class="contrast">跳转</button>
+      </div>
+    </div>
+  </article>
+</main>
+
+<dialog id="dlg">
+  <article>
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+      <strong id="dlgTitle">文章</strong>
+      <a href="#" aria-label="Close" class="secondary" id="dlgClose">✕</a>
+    </header>
+
+    <p class="muted" id="dlgMeta"></p>
+    <p><a href="#" id="dlgUrl" target="_blank" rel="noreferrer">打开原文</a></p>
+
+    <label>中文标题</label>
+    <input id="fZhTitle" type="text" placeholder="自然的中文标题"/>
+
+    <label>状态</label>
+    <select id="fStatus">
+      <option value="DONE">DONE</option>
+      <option value="NEEDS_REVIEW">NEEDS_REVIEW</option>
+      <option value="ERROR">ERROR</option>
+    </select>
+
+    <label>中文解读稿</label>
+    <textarea id="fZhContent" rows="10" placeholder="中文解读稿（可编辑）"></textarea>
+
+    <label>读后感</label>
+    <textarea id="fReflection" rows="6" placeholder="读后感（可编辑）"></textarea>
+
+    <footer style="display:flex;justify-content:flex-end;gap:.5rem;">
+      <button class="secondary" id="dlgCancel">取消</button>
+      <button class="contrast" id="dlgSave">保存</button>
+    </footer>
+  </article>
+</dialog>
+
+<script type="module" src="/js/articles.js"></script>
+</body>
+</html>
+
+

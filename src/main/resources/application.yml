@@ -36,11 +36,11 @@ app:
       enabled: false
       fixed-delay-ms: 21600000
   llm:
-    enabled: false
+    enabled: true
     # OpenAI-compatible: /v1/chat/completions
     base-url: https://api.deepseek.com
     api-key: ${LLM_API_KEY:sk-e466e545fce74ab9adcdbdfdee9b8c37}
     model: deepseek-reasoner
-    timeout-seconds: 90
+    timeout-seconds: 300
 
 

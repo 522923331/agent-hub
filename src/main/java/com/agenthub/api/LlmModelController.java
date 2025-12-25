@@ -20,9 +20,10 @@ public class LlmModelController {
     @GetMapping("/models")
     public ResponseEntity<?> models() {
         try {
+            log.info("查询 LLM 可用模型列表");
             return ResponseEntity.ok(llmModelService.listModels());
         } catch (Exception e) {
-            log.warn("List LLM models failed: {}", e.toString());
+            log.warn("查询 LLM 可用模型列表失败：{}", e.toString());
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

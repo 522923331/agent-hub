@@ -4,10 +4,13 @@ import com.agenthub.db.entity.KnowledgeSubscriptionEntity;
 import com.agenthub.knowledge.model.DiscoveredArticle;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -39,25 +42,50 @@ public class RssKnowledgeSource implements KnowledgeSource {
         if (feedUrl == null || feedUrl.isBlank()) return List.of();
 
         try {
-            String xml = webClient.get()
+            String body = webClient.get()
                     .uri(feedUrl)
-                    .header("User-Agent", "agent-hub/0.1 (+https://local)")
-                    .retrieve()
-                    .bodyToMono(String.class)
+                    .header(HttpHeaders.USER_AGENT, "Mozilla/5.0 (agent-hub/0.1)")
+                    .header(HttpHeaders.ACCEPT, "application/rss+xml, application/atom+xml, application/xml, text/xml, */*")
+                    .exchangeToMono(resp -> {
+                        MediaType ct = resp.headers().contentType().orElse(null);
+                        return resp.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(b -> {
+                                    if (!resp.statusCode().is2xxSuccessful()) {
+                                        log.warn("RSS 拉取返回非 2xx：name={}, url={}, status={}, contentType={}",
+                                                subscription.getName(), feedUrl, resp.statusCode().value(), ct);
+                                    }
+                                    return b;
+                                });
+                    })
                     .onErrorResume(e -> {
-                        log.warn("RSS fetch failed: name={}, url={}, err={}", subscription.getName(), feedUrl, e.toString());
+                        log.warn("RSS 拉取失败：name={}, url={}, err={}", subscription.getName(), feedUrl, e.toString());
                         return Mono.just("");
                     })
                     .block();
-            if (xml == null || xml.isBlank()) return List.of();
+            if (body == null || body.isBlank()) return List.of();
 
-            Document doc = DocumentBuilderFactory.newInstance()
-                    .newDocumentBuilder()
+            String xml = sanitizeXml(body);
+            if (!looksLikeFeedXml(xml)) {
+                String head = xml.substring(0, Math.min(160, xml.length())).replaceAll("\\s+", " ").trim();
+                log.warn("RSS 响应不是 XML feed（已跳过）：name={}, url={}, head={}", subscription.getName(), feedUrl, head);
+                return List.of();
+            }
+
+            DocumentBuilderFactory dbf = secureDbf();
+            Document doc = dbf.newDocumentBuilder()
                     .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
             doc.getDocumentElement().normalize();
 
             List<DiscoveredArticle> out = new ArrayList<>();
-            int limit = Math.max(1, subscription.getFetchLimit());
+            // 订阅的 fetchLimit 代表“本次希望新增的文章数”，但 RSS 里可能有重复/不可达链接，
+            // 所以 discovery 阶段多取一些候选，避免实际新增不足。
+            int targetNewLimit = Math.max(1, subscription.getFetchLimit());
+            int limit = Math.min(Math.max(1, targetNewLimit * 5), 200);
+            if (limit != targetNewLimit) {
+                log.debug("RSS discover candidate limit boosted: name={}, targetNewLimit={}, candidateLimit={}",
+                        subscription.getName(), targetNewLimit, limit);
+            }
 
             NodeList items = doc.getElementsByTagName("item");
             for (int i = 0; i < items.getLength() && out.size() < limit; i++) {
@@ -104,9 +132,45 @@ public class RssKnowledgeSource implements KnowledgeSource {
 
             return out;
         } catch (Exception e) {
-            log.warn("RSS parse failed: name={}, url={}, err={}", subscription.getName(), feedUrl, e.toString());
+            log.warn("RSS 解析失败：name={}, url={}, err={}", subscription.getName(), feedUrl, e.toString());
             return List.of();
         }
+    }
+
+    private String sanitizeXml(String s) {
+        if (s == null) return "";
+        String t = s;
+        // 去除 UTF-8 BOM
+        if (!t.isEmpty() && t.charAt(0) == '\uFEFF') t = t.substring(1);
+        // 跳过 XML 之前的异常前缀（例如被注入的垃圾字符）
+        int idx = t.indexOf('<');
+        if (idx > 0) t = t.substring(idx);
+        return t.trim();
+    }
+
+    private boolean looksLikeFeedXml(String s) {
+        if (s == null) return false;
+        String t = s.trim();
+        if (t.isEmpty()) return false;
+        String head = t.substring(0, Math.min(256, t.length())).toLowerCase();
+        // 常见 RSS/Atom 头部
+        return head.startsWith("<?xml")
+                || head.contains("<rss")
+                || head.contains("<feed")
+                || head.contains("<rdf:rdf");
+    }
+
+    private DocumentBuilderFactory secureDbf() throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        // 禁止外部实体/DTD，避免 XXE
+        try { dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true); } catch (Exception ignore) {}
+        try { dbf.setFeature("http://xml.org/sax/features/external-general-entities", false); } catch (Exception ignore) {}
+        try { dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false); } catch (Exception ignore) {}
+        try { dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false); } catch (Exception ignore) {}
+        dbf.setXIncludeAware(false);
+        dbf.setExpandEntityReferences(false);
+        return dbf;
     }
 
     private String text(Element e, String tag) {

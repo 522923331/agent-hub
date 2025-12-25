@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
@@ -49,9 +50,6 @@ public class KnowledgeArticleEntity {
     @Column(name = "fetched_at")
     private Instant fetchedAt;
 
-    @Column(name = "raw_html", columnDefinition = "LONGTEXT")
-    private String rawHtml;
-
     @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
     private String extractedText;
 
@@ -69,6 +67,27 @@ public class KnowledgeArticleEntity {
 
     @Column(nullable = false, length = 32)
     private String status;
+
+    @Column(name = "attractiveness_score", precision = 10, scale = 4)
+    private BigDecimal attractivenessScore;
+
+    @Column(name = "view_count")
+    private Integer viewCount;
+
+    @Column(name = "comment_count")
+    private Integer commentCount;
+
+    @Column(name = "like_count")
+    private Integer likeCount;
+
+    @Column(name = "share_count")
+    private Integer shareCount;
+
+    @Column(name = "attractiveness_signals_json", columnDefinition = "LONGTEXT")
+    private String attractivenessSignalsJson;
+
+    @Column(name = "scored_at")
+    private Instant scoredAt;
 
     @Column(name = "error_message", columnDefinition = "LONGTEXT")
     private String errorMessage;

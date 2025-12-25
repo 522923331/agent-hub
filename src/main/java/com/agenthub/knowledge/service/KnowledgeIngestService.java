@@ -33,6 +33,9 @@ public class KnowledgeIngestService {
     private final KnowledgeArticleRepository articleRepo;
 
     public IngestStats ingestSubscription(KnowledgeSubscriptionEntity sub) {
+        long start = System.currentTimeMillis();
+        log.info("订阅拉取开始：id={}, name={}, sourceType={}, enabled={}, limit={}",
+                sub.getId(), sub.getName(), sub.getSourceType(), sub.isEnabled(), sub.getFetchLimit());
         KnowledgeSource source = sourceRegistry.findByType(sub.getSourceType())
                 .orElseThrow(() -> new IllegalArgumentException("Unsupported sourceType: " + sub.getSourceType()));
 
@@ -41,8 +44,10 @@ public class KnowledgeIngestService {
         int saved = 0;
         int skipped = 0;
         int failed = 0;
+        int targetNewLimit = Math.max(1, sub.getFetchLimit());
 
         for (DiscoveredArticle d : discovered) {
+            if (saved >= targetNewLimit) break;
             if (d.url() == null || d.url().isBlank()) continue;
             String urlHash = Sha256.hex(d.url());
             if (articleRepo.existsByUrlHash(urlHash)) {
@@ -66,11 +71,10 @@ public class KnowledgeIngestService {
                 String lang = languageDetector.detect(extractedText);
 
                 entity.setFetchedAt(fetchedAt);
-                entity.setRawHtml(truncate(html, 2_000_000));
                 entity.setExtractedText(truncate(extractedText, 200_000));
                 entity.setDetectedLang(lang);
 
-                ExtractedArticle extracted = new ExtractedArticle(d, fetchedAt, entity.getRawHtml(), entity.getExtractedText(), lang);
+                ExtractedArticle extracted = new ExtractedArticle(d, fetchedAt, entity.getExtractedText(), lang);
                 EnrichedArticle enriched = llm.enrich(extracted);
 
                 entity.setZhTitle(truncate(enriched.zhTitle(), 6000));
@@ -86,10 +90,13 @@ public class KnowledgeIngestService {
                 entity.setErrorMessage(truncate(e.getMessage(), 10_000));
                 articleRepo.save(entity);
                 failed++;
-                log.warn("Ingest failed: sub={}, url={}, err={}", sub.getName(), d.url(), e.toString());
+                log.warn("文章拉取/解读失败：subId={}, subName={}, urlHash={}, url={}, err={}",
+                        sub.getId(), sub.getName(), urlHash, d.url(), e.toString());
             }
         }
 
+        log.info("订阅拉取结束：id={}, name={}, discovered={}, saved={}, skipped={}, failed={}, tookMs={}",
+                sub.getId(), sub.getName(), discoveredCount, saved, skipped, failed, (System.currentTimeMillis() - start));
         return new IngestStats(discoveredCount, saved, skipped, failed);
     }
 

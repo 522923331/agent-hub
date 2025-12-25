@@ -50,6 +50,9 @@ public class KnowledgeSubscriptionEntity {
     @Column(length = 500)
     private String tags;
 
+    @Column(name = "last_ingested_at")
+    private Instant lastIngestedAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
