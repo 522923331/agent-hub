@@ -33,8 +33,8 @@ app:
     timeout-seconds: 30
   scheduler:
     knowledge-ingest:
-      enabled: false
-      fixed-delay-ms: 21600000
+      enabled: true
+      fixed-delay-ms: 3600000
   llm:
     enabled: true
     # OpenAI-compatible: /v1/chat/completions

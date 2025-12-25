@@ -4,6 +4,7 @@ import com.agenthub.core.agent.Agent;
 import com.agenthub.core.agent.AgentContext;
 import com.agenthub.core.agent.AgentResult;
 import com.agenthub.db.entity.KnowledgeSubscriptionEntity;
+import com.agenthub.db.repo.KnowledgeArticleRepository;
 import com.agenthub.db.repo.KnowledgeSubscriptionRepository;
 import com.agenthub.knowledge.service.KnowledgeIngestService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KnowledgeIngestAgent implements Agent {
     private final KnowledgeSubscriptionRepository subscriptionRepo;
+    private final KnowledgeArticleRepository articleRepo;
     private final KnowledgeIngestService ingestService;
 
     @Override
@@ -38,13 +40,18 @@ public class KnowledgeIngestAgent implements Agent {
         Instant now = Instant.now();
 
         for (KnowledgeSubscriptionEntity sub : subs) {
-            if (minIntervalMinutes > 0 && sub.getLastIngestedAt() != null) {
-                long minutes = Duration.between(sub.getLastIngestedAt(), now).toMinutes();
+            // 更友好的跳过策略：用该订阅下最新文章的 fetchedAt 判断是否需要再次拉取。
+            // 这样本次拉取如果超时/失败，不会因为写入 lastIngestedAt 而阻止后续重试。
+            if (minIntervalMinutes > 0) {
+                Instant latestFetchedAt = articleRepo.findLatestFetchedAtBySubscriptionId(sub.getId());
+                if (latestFetchedAt != null) {
+                    long minutes = Duration.between(latestFetchedAt, now).toMinutes();
                 if (minutes >= 0 && minutes < minIntervalMinutes) {
                     subscriptionSkippedByInterval++;
-                    log.info("按时间间隔跳过订阅：id={}, name={}, lastIngestedAt={}, minutesAgo={}, minIntervalMinutes={}",
-                            sub.getId(), sub.getName(), sub.getLastIngestedAt(), minutes, minIntervalMinutes);
+                        log.info("按时间间隔跳过订阅：id={}, name={}, latestFetchedAt={}, minutesAgo={}, minIntervalMinutes={}",
+                                sub.getId(), sub.getName(), latestFetchedAt, minutes, minIntervalMinutes);
                     continue;
+                }
                 }
             }
 
@@ -54,9 +61,11 @@ public class KnowledgeIngestAgent implements Agent {
             skipped += s.skipped();
             failed += s.failed();
 
-            // 标记已拉取（无论是否拉到新文章，避免重复频繁拉取）
-            sub.setLastIngestedAt(now);
-            subscriptionRepo.save(sub);
+            // last_ingested_at 仅作为观测字段：本次订阅拉取没有失败才更新（失败则留空/旧值，方便重试）
+            if (s.failed() == 0) {
+                sub.setLastIngestedAt(Instant.now());
+                subscriptionRepo.save(sub);
+            }
         }
 
         Map<String, Object> stats = new HashMap<>();

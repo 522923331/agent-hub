@@ -13,13 +13,19 @@ public class EngagementSignalService {
     private final List<EngagementExtractor> extractors;
 
     public EngagementSignals extract(String url, String html) {
-        if (extractors == null || extractors.isEmpty()) return EngagementSignals.empty();
+        return extractWithSource(url, html).signals();
+    }
+
+    public ExtractResult extractWithSource(String url, String html) {
+        if (extractors == null || extractors.isEmpty()) return new ExtractResult("none", EngagementSignals.empty());
         for (EngagementExtractor ex : extractors) {
             EngagementSignals s = ex.extract(url, html);
-            if (s != null) return s;
+            if (s != null) return new ExtractResult(ex.getClass().getSimpleName(), s);
         }
-        return EngagementSignals.empty();
+        return new ExtractResult("none", EngagementSignals.empty());
     }
+
+    public record ExtractResult(String extractor, EngagementSignals signals) {}
 }
 
 

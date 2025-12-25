@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Optional;
 
 public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArticleEntity, Long> {
@@ -46,6 +47,9 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
             @Param("rescoreBefore") java.time.Instant rescoreBefore,
             Pageable pageable
     );
+
+    @Query("select max(a.fetchedAt) from KnowledgeArticleEntity a where a.subscriptionId = :subscriptionId")
+    Instant findLatestFetchedAtBySubscriptionId(@Param("subscriptionId") Long subscriptionId);
 }
 
 
