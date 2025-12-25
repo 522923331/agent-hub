@@ -1,20 +1,28 @@
 server:
-  port: 8088
+  port: 18888
 
 spring:
   application:
     name: agent-hub
   datasource:
-    url: jdbc:h2:file:./data/agenthub;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:mysql://8.140.249.192:3306/agent_hub?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USERNAME:admin}
+    password: ${MYSQL_PASSWORD:78g*Tw23.Ysq}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
   jpa:
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
     open-in-view: false
   flyway:
     enabled: true
@@ -31,8 +39,8 @@ app:
     enabled: false
     # OpenAI-compatible: /v1/chat/completions
     base-url: https://api.deepseek.com
-    api-key: ${LLM_API_KEY:}
-    model: deepseek-chat
+    api-key: ${LLM_API_KEY:sk-e466e545fce74ab9adcdbdfdee9b8c37}
+    model: deepseek-reasoner
     timeout-seconds: 90
 
 

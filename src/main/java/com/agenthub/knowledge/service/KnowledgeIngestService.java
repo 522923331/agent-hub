@@ -12,6 +12,7 @@ import com.agenthub.knowledge.model.ExtractedArticle;
 import com.agenthub.knowledge.source.KnowledgeSource;
 import com.agenthub.knowledge.source.KnowledgeSourceRegistry;
 import com.agenthub.llm.LanguageModelClient;
+import com.agenthub.util.Sha256;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -44,16 +44,17 @@ public class KnowledgeIngestService {
 
         for (DiscoveredArticle d : discovered) {
             if (d.url() == null || d.url().isBlank()) continue;
-            if (articleRepo.existsByUrl(d.url())) {
+            String urlHash = Sha256.hex(d.url());
+            if (articleRepo.existsByUrlHash(urlHash)) {
                 skipped++;
                 continue;
             }
 
             KnowledgeArticleEntity entity = new KnowledgeArticleEntity();
-            entity.setId(UUID.randomUUID());
             entity.setSubscriptionId(sub.getId());
             entity.setSourceName(sub.getName());
             entity.setUrl(d.url());
+            entity.setUrlHash(urlHash);
             entity.setTitle(d.title());
             entity.setPublishedAt(d.publishedAt());
             entity.setStatus("NEEDS_REVIEW");

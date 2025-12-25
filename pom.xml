@@ -22,6 +22,8 @@
         <maven.compiler.release>17</maven.compiler.release>
         <!-- 兼容本机 Maven 3.6.1：maven-compiler-plugin 3.13.0 要求 Maven >= 3.6.3 -->
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <!-- 兼容本机 Maven 3.6.1：maven-jar-plugin 3.4.x 要求 Maven >= 3.6.3 -->
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
     </properties>
 
     <dependencies>
@@ -47,8 +49,12 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
 

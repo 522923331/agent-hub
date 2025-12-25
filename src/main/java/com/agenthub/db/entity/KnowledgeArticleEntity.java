@@ -2,6 +2,8 @@ package com.agenthub.db.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -11,7 +13,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -19,21 +20,25 @@ import java.util.UUID;
 @Table(
         name = "knowledge_article",
         indexes = {
-                @Index(name = "uk_knowledge_article_url", columnList = "url", unique = true)
+                @Index(name = "uk_knowledge_article_url_hash", columnList = "url_hash", unique = true)
         }
 )
 public class KnowledgeArticleEntity {
     @Id
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "subscription_id")
-    private UUID subscriptionId;
+    private Long subscriptionId;
 
     @Column(name = "source_name", length = 200)
     private String sourceName;
 
     @Column(nullable = false, length = 2000)
     private String url;
+
+    @Column(name = "url_hash", nullable = false, columnDefinition = "CHAR(64)")
+    private String urlHash;
 
     @Column(length = 600)
     private String title;
@@ -44,10 +49,10 @@ public class KnowledgeArticleEntity {
     @Column(name = "fetched_at")
     private Instant fetchedAt;
 
-    @Column(name = "raw_html", columnDefinition = "TEXT")
+    @Column(name = "raw_html", columnDefinition = "LONGTEXT")
     private String rawHtml;
 
-    @Column(name = "extracted_text", columnDefinition = "TEXT")
+    @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
     private String extractedText;
 
     @Column(name = "detected_lang", length = 32)
@@ -56,16 +61,16 @@ public class KnowledgeArticleEntity {
     @Column(name = "zh_title", length = 600)
     private String zhTitle;
 
-    @Column(name = "zh_content", columnDefinition = "TEXT")
+    @Column(name = "zh_content", columnDefinition = "LONGTEXT")
     private String zhContent;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String reflection;
 
     @Column(nullable = false, length = 32)
     private String status;
 
-    @Column(name = "error_message", columnDefinition = "TEXT")
+    @Column(name = "error_message", columnDefinition = "LONGTEXT")
     private String errorMessage;
 
     @Column(name = "created_at", nullable = false)

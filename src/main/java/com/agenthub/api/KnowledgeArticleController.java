@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/articles")
@@ -22,17 +21,18 @@ public class KnowledgeArticleController {
     private final KnowledgeArticleRepository repo;
 
     @GetMapping
-    public Page<KnowledgeArticleEntity> list(
+    public PageResponse<KnowledgeArticleEntity> list(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size
     ) {
         int safeSize = Math.min(Math.max(size, 1), 100);
         int safePage = Math.max(page, 0);
-        return repo.findAllByOrderByCreatedAtDesc(PageRequest.of(safePage, safeSize));
+        Page<KnowledgeArticleEntity> p = repo.findAllByOrderByCreatedAtDesc(PageRequest.of(safePage, safeSize));
+        return PageResponse.from(p);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable("id") UUID id) {
+    public ResponseEntity<?> get(@PathVariable("id") Long id) {
         return repo.findById(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "not found")));

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -24,7 +23,7 @@ public class AgentRunnerService {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown agent: " + agentName));
 
         AgentRunEntity run = new AgentRunEntity();
-        run.setId(UUID.randomUUID());
+        run.setId(null);
         run.setAgentName(agent.name());
         run.setStartedAt(Instant.now());
         run.setStatus("RUNNING");
