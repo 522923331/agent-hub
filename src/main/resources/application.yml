@@ -29,6 +29,7 @@ spring:
     locations: classpath:db/migration
 
 app:
+  public-base-url: "http://8.140.249.192:18888/"
   http:
     timeout-seconds: 30
   scheduler:
@@ -46,7 +47,7 @@ app:
 
 alarm:
   lark:
-    webhook: https://open.larksuite.com/open-apis/bot/v2/hook/038d5958-9bee-47a3-97e4-5d3a1be4c385
-    secret: YfL2Cm12ZxW3gxy3kMmYDf
+    webhook: https://open.larksuite.com/open-apis/bot/v2/hook/5499b0eb-156c-41f7-873a-f2783cd0dc6e
+    secret: QNAbZHDWsuwMckRzM2J2c
     enable: true
 

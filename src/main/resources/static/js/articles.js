@@ -211,6 +211,12 @@ listEl.addEventListener('click', (ev) => {
   if (act === 'detail') openDetail(id);
 });
 
-load();
+load().then(() => {
+  // 支持深链：/articles.html?id=123 自动打开详情
+  try{
+    const id = new URLSearchParams(location.search).get('id');
+    if (id) openDetail(id);
+  }catch(e){}
+});
 
 
