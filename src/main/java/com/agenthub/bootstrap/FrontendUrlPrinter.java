@@ -1,6 +1,8 @@
 package com.agenthub.bootstrap;
 
+import com.agenthub.util.LarkAlarmUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -11,6 +13,8 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 @Component
 public class FrontendUrlPrinter implements ApplicationListener<ApplicationReadyEvent> {
     private final WebApplicationContext ctx;
+    @Autowired
+    private LarkAlarmUtil larkAlarmUtil;
 
     public FrontendUrlPrinter(WebApplicationContext ctx) {
         this.ctx = ctx;
@@ -24,6 +28,7 @@ public class FrontendUrlPrinter implements ApplicationListener<ApplicationReadyE
         }
         String url = "http://localhost:" + port + "/";
         log.info("前端入口：{}", url);
+        larkAlarmUtil.sendTextAlarm("agent-hub服务已启动，url:"+url);
     }
 }
 
