@@ -85,9 +85,9 @@
   </article>
 </main>
 
-<dialog id="dlg">
+<dialog id="dlg" class="dlg-sub">
   <article>
-    <header style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+    <header class="dlg-header">
       <strong id="dlgTitle">订阅</strong>
       <a href="#" aria-label="Close" class="secondary" id="dlgClose">✕</a>
     </header>
@@ -95,30 +95,34 @@
       <div>
         <label>英文名（必填）</label>
         <input id="fName" type="text" placeholder="TechCrunch"/>
+        <small class="muted">用于区分来源（建议英文/简短）。</small>
       </div>
       <div>
         <label>sourceType</label>
         <input id="fType" type="text" value="RSS"/>
+        <small class="muted">目前一般填 RSS。</small>
       </div>
     </div>
     <label>中文名（必填）</label>
     <input id="fZhName" type="text" placeholder="科技创业新鲜事"/>
     <label>网站能力总结（必填）</label>
-    <textarea id="fCap" rows="3" placeholder="用一句话说明内容价值"></textarea>
+    <textarea id="fCap" rows="4" placeholder="用一句话说明内容价值"></textarea>
     <label>feedUrl（必填）</label>
     <input id="fUrl" type="text" placeholder="https://example.com/feed"/>
     <div class="grid">
       <div>
         <label>tags（逗号分隔）</label>
         <input id="fTags" type="text" placeholder="tech,innovation"/>
+        <small class="muted">可用于细分领域 prompt：例如 emotion,health。</small>
       </div>
       <div>
         <label>fetchLimit</label>
         <input id="fLimit" type="number" value="10" min="1" max="200"/>
+        <small class="muted">每次拉取最多新增多少篇。</small>
       </div>
     </div>
     <label><input id="fEnabled" type="checkbox" checked/> 启用</label>
-    <footer style="display:flex;justify-content:flex-end;gap:.5rem;">
+    <footer class="dlg-footer">
       <button class="secondary" id="dlgCancel">取消</button>
       <button class="contrast" id="dlgSave">保存</button>
     </footer>

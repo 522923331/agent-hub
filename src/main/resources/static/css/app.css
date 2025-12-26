@@ -38,4 +38,41 @@ dialog::backdrop{ background: rgba(0,0,0,.45); }
 
 nav .active{ font-weight:700; text-decoration: underline; }
 
+/* 订阅页“新增/编辑订阅”弹窗：更大、更清晰的层级与间距 */
+dialog.dlg-sub{ width: min(980px, 96vw); }
+dialog.dlg-sub .dlg-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  padding-bottom:.65rem;
+  margin-bottom:.75rem;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+}
+dialog.dlg-sub .dlg-header strong{ font-size: 1.15rem; }
+dialog.dlg-sub #dlgClose{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border-radius: .6rem;
+}
+dialog.dlg-sub label{ font-weight: 650; }
+dialog.dlg-sub input,
+dialog.dlg-sub select,
+dialog.dlg-sub textarea{
+  font-size: 1rem;
+  padding: .6rem .75rem;
+}
+dialog.dlg-sub textarea{ min-height: 7rem; }
+dialog.dlg-sub .grid{ gap: 1rem; }
+dialog.dlg-sub .dlg-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:.6rem;
+  margin-top: .9rem;
+}
+
 
