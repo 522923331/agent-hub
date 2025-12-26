@@ -1,5 +1,6 @@
 package com.agenthub.llm;
 
+import com.agenthub.constant.Prompt;
 import com.agenthub.knowledge.model.EnrichedArticle;
 import com.agenthub.knowledge.model.ExtractedArticle;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,7 +52,7 @@ public class OpenAiCompatibleChatClient implements LanguageModelClient {
     }
 
     private EnrichedArticle doEnrich(ExtractedArticle article, boolean isRetry) throws Exception {
-        String system = systemPrompt();
+        String system = Prompt.buildSystemPrompt(article == null ? null : article.subscriptionTags());
         String user = userPrompt(article);
 
         Map<String, Object> body = Map.of(
@@ -68,6 +69,18 @@ public class OpenAiCompatibleChatClient implements LanguageModelClient {
         int t = Math.max(10, props.getTimeoutSeconds());
         long start = System.currentTimeMillis();
 
+        // 关键日志：不打印全文 prompt/文章内容，避免泄漏隐私或敏感信息
+        String tags = article == null ? null : article.subscriptionTags();
+        Prompt.Domain domain = Prompt.Domain.from(tags);
+        log.info("LLM 解读准备请求：model={}, domain={}, hasTags={}, systemLen={}, userLen={}, retry={}, timeoutSec={}",
+                props.getModel(),
+                domain.name(),
+                tags != null && !tags.isBlank(),
+                system == null ? 0 : system.length(),
+                user == null ? 0 : user.length(),
+                isRetry,
+                t);
+
         String resp = webClient.post()
                 .uri(url)
                 .header(HttpHeaders.AUTHORIZATION, bearer(props.getApiKey()))
@@ -79,7 +92,7 @@ public class OpenAiCompatibleChatClient implements LanguageModelClient {
                 .timeout(Duration.ofSeconds(t))
                 .block();
 
-        log.info("LLM 解读调用成功：tookMs={}, retry={}", (System.currentTimeMillis() - start), isRetry);
+        log.info("LLM 解读调用成功：tookMs={}, retry={}, domain={}", (System.currentTimeMillis() - start), isRetry, Prompt.Domain.from(tags).name());
 
         if (resp == null || resp.isBlank()) {
             return fallback(article, "LLM 返回空响应");
@@ -136,27 +149,6 @@ public class OpenAiCompatibleChatClient implements LanguageModelClient {
         if (baseUrl == null) return "";
         if (baseUrl.endsWith("/")) return baseUrl.substring(0, baseUrl.length() - 1);
         return baseUrl;
-    }
-
-    private String systemPrompt() {
-        return """
-你是一名真实的中文读者与“解读作者”。你会阅读一篇外文文章，然后写出一篇“中文解读稿”：让不了解背景的读者也能身临其境地理解作者在说什么、为什么这么说、关键逻辑链是什么。
-
-硬性要求：
-1) 禁止自称“作为AI/模型/助手”
-2) 中文解读稿不是“摘要/总结”：不要只用几段概括，而要把文章内容讲透（可故事化/场景化/类比化/分步骤讲解）
-3) 但也不要编造原文不存在的事实、数据、引语；遇到原文没说清的地方，请明确写“原文未说明/无法确定”
-4) 语言要像真人写给朋友：有节奏、有画面感、有解释，有必要时给一个生活化例子帮助理解
-5) 不要堆砌套话（例如“总之/综上所述/值得注意的是”过多）
-4) 输出必须是严格 JSON（不要额外文字）
-
-输出 JSON 结构：
-{
-  "zhTitle": "中文标题（自然，不直译，不超过30字）",
-  "zhContent": "中文解读稿（建议 1200~2500 字；以解释/讲解为主，必要时可重组结构；保留关键事实与逻辑链，并用类比/例子让读者理解）",
-  "reflection": "读后感（200~500字，像读完后写给朋友的感想：你认可什么、质疑什么、联想到什么）"
-}
-""";
     }
 
     private String userPrompt(ExtractedArticle article) {

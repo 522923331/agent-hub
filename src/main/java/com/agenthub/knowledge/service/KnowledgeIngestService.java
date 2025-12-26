@@ -74,7 +74,7 @@ public class KnowledgeIngestService {
                 entity.setExtractedText(truncate(extractedText, 200_000));
                 entity.setDetectedLang(lang);
 
-                ExtractedArticle extracted = new ExtractedArticle(d, fetchedAt, entity.getExtractedText(), lang);
+                ExtractedArticle extracted = new ExtractedArticle(d, fetchedAt, entity.getExtractedText(), lang, sub.getTags());
                 EnrichedArticle enriched = llm.enrich(extracted);
 
                 entity.setZhTitle(truncate(enriched.zhTitle(), 6000));
